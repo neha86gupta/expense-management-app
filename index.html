@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SpendWise – Add Expense</title>
+    <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;600;700&family=Cabinet+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:      #f5f0e8;
+            --surface: #ede8df;
+            --card:    #ffffff;
+            --ink:     #1a1410;
+            --muted:   #8a7f72;
+            --border:  #ddd8ce;
+            --rust:    #c4502a;
+            --rust-lt: #f0e8e3;
+            --gold:    #c49a2a;
+            --sage:    #4a7c5f;
+            --shadow:  rgba(26,20,16,0.10);
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--ink);
+            font-family: 'Cabinet Grotesk', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* Grain texture overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.5;
+        }
+
+        .wrap {
+            width: 100%;
+            max-width: 480px;
+            animation: rise 0.6s cubic-bezier(.22,.68,0,1.2) both;
+        }
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(24px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0)    scale(1); }
+        }
+
+        /* Logo */
+        .logo {
+            display: flex;
+            align-items: baseline;
+            gap: 0.35rem;
+            margin-bottom: 2rem;
+        }
+        .logo-mark {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.04em;
+        }
+        .logo-mark em { color: var(--rust); font-style: normal; }
+        .logo-tag {
+            font-size: 0.72rem;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        /* Card */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.4rem 2.2rem;
+            box-shadow: 0 8px 40px var(--shadow), 0 1px 0 rgba(255,255,255,.8) inset;
+        }
+
+        .card-title {
+            font-family: 'Clash Display', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            margin-bottom: 0.25rem;
+            line-height: 1.1;
+        }
+        .card-sub {
+            color: var(--muted);
+            font-size: 0.88rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Form */
+        .field { margin-bottom: 1.3rem; }
+        label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.45rem;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 0.8rem 1rem;
+            font-family: 'Cabinet Grotesk', sans-serif;
+            font-size: 1rem;
+            color: var(--ink);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus {
+            border-color: var(--rust);
+            box-shadow: 0 0 0 3px rgba(196,80,42,0.12);
+        }
+        input::placeholder { color: #b5afa6; }
+
+        .amount-wrap { position: relative; }
+        .rupee {
+            position: absolute; left: 1rem; top: 50%;
+            transform: translateY(-50%);
+            font-weight: 700; color: var(--rust); font-size: 1rem;
+        }
+        .amount-wrap input { padding-left: 1.9rem; }
+
+        /* Category grid */
+        .cat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.45rem;
+        }
+        .cat-opt {
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 0.6rem 0.3rem;
+            background: var(--surface);
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--muted);
+            transition: all 0.18s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+        }
+        .cat-opt .ico { font-size: 1.15rem; }
+        .cat-opt:hover { border-color: var(--rust); color: var(--ink); }
+        .cat-opt.sel {
+            background: var(--rust-lt);
+            border-color: var(--rust);
+            color: var(--rust);
+            font-weight: 700;
+        }
+
+        /* Buttons */
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+            margin-top: 1.8rem;
+        }
+        .btn-primary {
+            background: var(--ink);
+            color: var(--bg);
+            border: none;
+            border-radius: 12px;
+            padding: 0.9rem 1rem;
+            font-family: 'Clash Display', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 16px rgba(26,20,16,0.22);
+        }
+        .btn-primary:hover {
+            background: var(--rust);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(196,80,42,0.28);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: var(--ink);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 0.9rem 1rem;
+            font-family: 'Clash Display', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-secondary:hover {
+            border-color: var(--ink);
+            background: var(--surface);
+            transform: translateY(-2px);
+        }
+
+        /* Status */
+        .status {
+            margin-top: 1rem;
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-align: center;
+            display: none;
+        }
+        .status.ok  { background: #e8f5ee; color: var(--sage); border: 1px solid #b8ddc8; display: block; }
+        .status.err { background: var(--rust-lt); color: var(--rust); border: 1px solid #e8c0b0; display: block; }
+
+        /* Bottom strip */
+        .strip {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 1.4rem;
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+        .strip-dot { width: 4px; height: 4px; background: var(--muted); border-radius: 50%; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="logo">
+        <span class="logo-mark">Spend<em>Wise</em></span>
+        <span class="logo-tag">— expense tracker</span>
+    </div>
+
+    <div class="card">
+        <h1 class="card-title">Log an<br/>Expense</h1>
+        <p class="card-sub">Fill in the details and hit Save.</p>
+
+        <div class="field">
+            <label>What did you spend on?</label>
+            <input type="text" id="item" placeholder="e.g. Dinner, Metro, Netflix…"/>
+        </div>
+
+        <div class="field">
+            <label>Amount</label>
+            <div class="amount-wrap">
+                <span class="rupee">₹</span>
+                <input type="number" id="amount" placeholder="0.00" step="0.01" min="0"/>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Category</label>
+            <input type="hidden" id="category" value="Other"/>
+            <div class="cat-grid">
+                <div class="cat-opt" onclick="pickCat('Food',this)"><span class="ico">🍔</span>Food</div>
+                <div class="cat-opt" onclick="pickCat('Transport',this)"><span class="ico">🚗</span>Transport</div>
+                <div class="cat-opt" onclick="pickCat('Shopping',this)"><span class="ico">🛍️</span>Shopping</div>
+                <div class="cat-opt" onclick="pickCat('Bills',this)"><span class="ico">📄</span>Bills</div>
+                <div class="cat-opt" onclick="pickCat('Health',this)"><span class="ico">💊</span>Health</div>
+                <div class="cat-opt" onclick="pickCat('Entertainment',this)"><span class="ico">🎬</span>Fun</div>
+                <div class="cat-opt sel" onclick="pickCat('Other',this)"><span class="ico">📦</span>Other</div>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn-primary" onclick="saveExpense()">Save →</button>
+            <a href="/dashboard" class="btn-secondary">View Expenses</a>
+        </div>
+
+        <div class="status" id="status"></div>
+    </div>
+
+    <div class="strip">
+        <span>Data stored in MongoDB</span>
+        <div class="strip-dot"></div>
+        <span>3-month auto-cleanup</span>
+    </div>
+</div>
+
+<script>
+    function pickCat(name, el) {
+        document.querySelectorAll('.cat-opt').forEach(b => b.classList.remove('sel'));
+        el.classList.add('sel');
+        document.getElementById('category').value = name;
+    }
+
+    function showStatus(msg, type) {
+        const s = document.getElementById('status');
+        s.textContent = msg;
+        s.className = 'status ' + type;
+        setTimeout(() => s.className = 'status', 3500);
+    }
+
+    async function saveExpense() {
+        const item     = document.getElementById('item').value.trim();
+        const amount   = document.getElementById('amount').value.trim();
+        const category = document.getElementById('category').value;
+
+        if (!item)   return showStatus('⚠ Please enter what you spent on.', 'err');
+        if (!amount) return showStatus('⚠ Please enter an amount.', 'err');
+        if (parseFloat(amount) <= 0) return showStatus('⚠ Amount must be greater than 0.', 'err');
+
+        try {
+            const res  = await fetch('/api/add', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ item, amount: parseFloat(amount), category })
+            });
+            const data = await res.json();
+            if (data.error) return showStatus('⚠ ' + data.error, 'err');
+
+            showStatus(`✓ ₹${parseFloat(amount).toFixed(2)} for "${item}" saved!`, 'ok');
+            document.getElementById('item').value   = '';
+            document.getElementById('amount').value = '';
+        } catch {
+            showStatus('⚠ Could not connect to server. Is Flask running?', 'err');
+        }
+    }
+
+    // Allow Enter key to submit
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') saveExpense(); });
+</script>
+</body>
+</html>
